@@ -8,7 +8,7 @@ import 'package:qr_test/QrCodeScanner.dart';
 void main() => runApp(const NavigationBarApp());
 
 class AppState extends ChangeNotifier {
-  final qrCodes = <String>["elo", "18", "60"];
+  final qrCodes = <String>["testValue1", "testValue2", "testValue3"];
 
   void addQrCode(qrCode) {
     if (!qrCodes.contains(qrCode)) {
@@ -85,13 +85,18 @@ class HomePage extends StatelessWidget {
     var appState = context.watch<AppState>();
     var qrCodes = appState.qrCodes;
 
-    return Scaffold(
-        body: SizedBox(
-      height: 200.0,
-      child: ListView(
-        children: [for (var code in qrCodes) Text(code)],
-      ),
-    ));
+    return Column(
+      children: [
+        SizedBox(
+          height: 200.0,
+          child: ListView(
+            shrinkWrap: true,
+            children: [for (var code in qrCodes) Text(code)],
+          ),
+        ),
+        NonogramBoard(),
+      ],
+    );
   }
 }
 
@@ -169,6 +174,78 @@ class QRCodeGenerator extends StatelessWidget {
       data: data,
       version: QrVersions.auto,
       size: 200.0,
+    );
+  }
+}
+
+class NonogramBoard extends StatelessWidget {
+  final int size = 8;
+
+  const NonogramBoard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        height: size * 60,
+        child: Center(
+          child: GridView.count(
+            crossAxisCount: size,
+            padding: EdgeInsets.all(10),
+            mainAxisSpacing: 1.0,
+            crossAxisSpacing: 1.0,
+            children: [
+              for (var i = 0; i < size * size; i++)
+                NonogramTile(color: i % 3 == 0 ? Colors.red : Colors.white)
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class NonogramTile extends StatefulWidget {
+  final Color color;
+
+  const NonogramTile({super.key, required this.color});
+
+  @override
+  State<NonogramTile> createState() => _NonogramTileState();
+}
+
+class _NonogramTileState extends State<NonogramTile> {
+  //random init value
+  Color currentColor = Colors.green;
+
+  @override
+  void initState() {
+    super.initState();
+    currentColor = widget.color;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          print(currentColor);
+          if (currentColor == Colors.blue) {
+            currentColor = Colors.white;
+          } else {
+            currentColor = Colors.blue;
+          }
+        });
+        //should also update a global state of nonogram board);
+      },
+      child: Container(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: currentColor,
+            border: Border.all(color: Colors.black),
+          ),
+        ),
+      ),
     );
   }
 }
