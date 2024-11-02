@@ -46,40 +46,44 @@ class _NavigationExampleState extends State<NavigationExample> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
-      bottomNavigationBar: NavigationBar(
-        onDestinationSelected: (int index) {
-          setState(() {
-            currentPageIndex = index;
-          });
-        },
-        indicatorColor: Colors.amber,
-        selectedIndex: currentPageIndex,
-        destinations: const <Widget>[
-          NavigationDestination(
-            icon: Icon(Icons.qr_code),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.qr_code_scanner),
-            label: 'Scan codes',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.handyman),
-            label: 'Create codes',
-          ),
-        ],
-      ),
-      body: <Widget>[
-        /// Home page
-        HomePage(),
-        ScanPage(),
-        GeneratePage(),
-      ][currentPageIndex],
-    );
+        bottomNavigationBar: NavigationBar(
+          onDestinationSelected: (int index) {
+            setState(() {
+              currentPageIndex = index;
+            });
+          },
+          indicatorColor: Colors.amber,
+          selectedIndex: currentPageIndex,
+          destinations: const <Widget>[
+            NavigationDestination(
+              icon: Icon(Icons.qr_code),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.qr_code_scanner),
+              label: 'Scan codes',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.handyman),
+              label: 'Create codes',
+            ),
+          ],
+        ),
+        body: IndexedStack(index: currentPageIndex, children: [
+          /// Home page
+          HomePage(),
+          ScanPage(),
+          GeneratePage(),
+        ]));
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<AppState>();
