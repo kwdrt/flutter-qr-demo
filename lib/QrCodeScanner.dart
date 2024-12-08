@@ -12,21 +12,33 @@ class QrCodeScanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MobileScanner(
-      controller: controller,
-      onDetect: (BarcodeCapture capture) async {
-        final List<Barcode> barcodes = capture.barcodes;
-        final barcode = barcodes.first;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("QR Code Scanner"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            controller.dispose();
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+      body: MobileScanner(
+        controller: controller,
+        onDetect: (BarcodeCapture capture) async {
+          final List<Barcode> barcodes = capture.barcodes;
+          final barcode = barcodes.first;
 
-        if (barcode.rawValue != null) {
-          setResult(barcode.rawValue);
+          if (barcode.rawValue != null) {
+            setResult(barcode.rawValue);
 
-          await controller
-              .stop()
-              .then((value) => controller.dispose())
-              .then((value) => Navigator.of(context).pop());
-        }
-      },
+            await controller
+                .stop()
+                .then((value) => controller.dispose())
+                .then((value) => Navigator.of(context).pop());
+          }
+        },
+      ),
     );
   }
 }
