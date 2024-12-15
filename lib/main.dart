@@ -1,22 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_test/AppState.dart';
 import 'QrCodeGenerator.dart';
 import 'QrCodeScanner.dart';
-import 'home_page.dart'; 
+import 'home_page.dart';
 
 /// Flutter code sample for [NavigationBar].
 
 void main() => runApp(const NavigationBarApp());
-
-class AppState extends ChangeNotifier {
-  final qrCodes = <String>["testValue1", "testValue2", "testValue3"];
-
-  void addQrCode(qrCode) {
-    if (!qrCodes.contains(qrCode)) {
-      qrCodes.add(qrCode);
-    }
-  }
-}
 
 class NavigationBarApp extends StatelessWidget {
   const NavigationBarApp({super.key});
