@@ -16,4 +16,10 @@ Personally tested - VSC + Android device/emulator
 
 With setup VSC - F5
 
-Alternative - `flutter run` in terminal.
+Alternative:
+`flutter clean` 
+`flutter pub get` 
+`flutter run` 
+in terminal.
+
+

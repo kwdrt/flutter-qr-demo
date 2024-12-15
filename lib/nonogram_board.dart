@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class NonogramBoard extends StatefulWidget {
-  final String title; 
+  final String title;
   final List<List<int>> solution;
   final List<List<int>> rowClues;
   final List<List<int>> columnClues;
 
   const NonogramBoard({
     super.key,
-    required this.title, 
+    required this.title,
     required this.solution,
     required this.rowClues,
     required this.columnClues,
@@ -32,8 +32,6 @@ class _NonogramBoardState extends State<NonogramBoard> {
     super.initState();
     rows = widget.solution.length;
     cols = widget.solution[0].length;
-
-    // Initialize player state to all 0s
     playerState = List.generate(rows, (_) => List.generate(cols, (_) => 0));
   }
 
@@ -41,7 +39,7 @@ class _NonogramBoardState extends State<NonogramBoard> {
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
         if (playerState[i][j] != widget.solution[i][j]) {
-          return; 
+          return;
         }
       }
     }
@@ -52,21 +50,23 @@ class _NonogramBoardState extends State<NonogramBoard> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text("Congratulations!"),
-        content: Text("You have completed the puzzle correctly. Would you like to solve it again?"),
+        content: Text(
+            "You have completed the puzzle correctly. Would you like to solve it again?"),
         actions: [
           TextButton(
             onPressed: () {
               // Reset the board
               setState(() {
-                playerState = List.generate(rows, (_) => List.generate(cols, (_) => 0));
-                resetBoard = !resetBoard; 
+                playerState =
+                    List.generate(rows, (_) => List.generate(cols, (_) => 0));
+                resetBoard = !resetBoard;
               });
-              Navigator.of(context).pop(); 
+              Navigator.of(context).pop();
             },
             child: Text("Yes"),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(), 
+            onPressed: () => Navigator.of(context).pop(),
             child: Text("No"),
           ),
         ],
@@ -79,12 +79,12 @@ class _NonogramBoardState extends State<NonogramBoard> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Dynamically calculate grid and font size based on screen width
-    final gridSize = screenWidth / (cols + 4); 
+    final gridSize = screenWidth / (cols + 4);
     final fontSize = gridSize * 0.3;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title), 
+        title: Text(widget.title),
         backgroundColor: Colors.amber,
         actions: [
           IconButton(
@@ -96,65 +96,90 @@ class _NonogramBoardState extends State<NonogramBoard> {
         ],
       ),
       body: Container(
-        color: Colors.white, 
+        color: Colors.white,
         child: Center(
           child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(cols, (col) {
-                    return Container(
-                      width: gridSize,
-                      child: Column(
-                        children: widget.columnClues[col]
-                            .map((clue) =>
-                                Text('$clue', style: TextStyle(fontSize: fontSize)))
-                            .toList(),
-                      ),
-                    );
-                  }),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      children: List.generate(rows, (row) {
+            scrollDirection: Axis.horizontal,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Column Clues
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(width: gridSize * 0.8), // Slightly reduce the offset
+                      ...List.generate(cols, (col) {
                         return Container(
-                          height: gridSize,
-                          child: Row(
-                            children: widget.rowClues[row]
-                                .map((clue) => Text('$clue',
-                                    style: TextStyle(fontSize: fontSize)))
+                          width: gridSize,
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: widget.columnClues[col]
+                                .map((clue) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 2.0),
+                                      child: Text(
+                                        '$clue',
+                                        style: TextStyle(
+                                            fontSize: fontSize, height: 1.0),
+                                      ),
+                                    ))
                                 .toList(),
                           ),
                         );
                       }),
-                    ),
-                    // Grid
-                    Column(
-                      children: List.generate(rows, (row) {
-                        return Row(
-                          children: List.generate(cols, (col) {
-                            return NonogramTile(
-                              isSolution: widget.solution[row][col] == 1,
-                              gridSize: gridSize,
-                              onTileTapped: (value) {
-                                setState(() {
-                                  playerState[row][col] = value;
-                                  checkSolution();
-                                });
-                              },
-                              reset: resetBoard, // Pass reset trigger
-                            );
-                          }),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  // Row Clues and Grid
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: List.generate(rows, (row) {
+                          return Container(
+                            height: gridSize,
+                            alignment: Alignment.centerRight,
+                            padding: EdgeInsets.symmetric(horizontal: 4.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: widget.rowClues[row]
+                                  .map((clue) => Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 2.0),
+                                        child: Text('$clue',
+                                            style: TextStyle(
+                                                fontSize: fontSize, height: 1.0)),
+                                      ))
+                                  .toList(),
+                            ),
+                          );
+                        }),
+                      ),
+                      // Grid
+                      Column(
+                        children: List.generate(rows, (row) {
+                          return Row(
+                            children: List.generate(cols, (col) {
+                              return NonogramTile(
+                                isSolution: widget.solution[row][col] == 1,
+                                gridSize: gridSize,
+                                onTileTapped: (value) {
+                                  setState(() {
+                                    playerState[row][col] = value;
+                                    checkSolution();
+                                  });
+                                },
+                                reset: resetBoard, // Pass reset trigger
+                              );
+                            }),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -169,7 +194,7 @@ class NonogramTile extends StatefulWidget {
   final bool isSolution;
   final double gridSize;
   final ValueChanged<int> onTileTapped;
-  final bool reset; 
+  final bool reset;
 
   const NonogramTile({
     super.key,
