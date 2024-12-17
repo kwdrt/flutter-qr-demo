@@ -21,6 +21,7 @@ class NonogramBoard extends StatefulWidget {
 class _NonogramBoardState extends State<NonogramBoard> {
   late final int rows;
   late final int cols;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Player's current board state
   late List<List<int>> playerState;
@@ -74,6 +75,45 @@ class _NonogramBoardState extends State<NonogramBoard> {
     );
   }
 
+  void giveHint() {
+    // Calculate positions of mismatched tiles
+    List<List<int>> hintMarkedPositions = [];
+    List<List<int>> hintBlankPositions = [];
+    for (int i = 0; i < rows; i++) {
+      for (int j = 0; j < cols; j++) {
+        if (playerState[i][j] == 0 && widget.solution[i][j] == 1) {
+          hintMarkedPositions.add([i, j]);
+        } 
+        else if (playerState[i][j] == 1 && widget.solution[i][j] == 0) {
+          hintBlankPositions.add([i, j]);
+        }
+      }
+    }
+    // Give a hint at a random position
+    setState(() {
+      final randomHint;
+      if (hintMarkedPositions.isNotEmpty) {
+        randomHint = (hintMarkedPositions..shuffle()).first;
+        playerState[randomHint[0]][randomHint[1]] = 1;
+      }
+      else{
+        randomHint = (hintBlankPositions..shuffle()).first;
+        playerState[randomHint[0]][randomHint[1]] = 0;
+      } 
+      debugPrint("Giving a hint at position: $randomHint");
+      // Tell where the hint was given
+      // final scaffoldState = _scaffoldKey.currentState;
+      // if (scaffoldState != null) {
+      //   scaffoldState.setState(() {
+      //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hint given at row: ${randomHint[0]}, column: ${randomHint[1]}")));
+      //   });
+      // }
+      checkSolution();
+    });
+
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -83,6 +123,7 @@ class _NonogramBoardState extends State<NonogramBoard> {
     final fontSize = gridSize * 0.3;
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(widget.title), 
         backgroundColor: Colors.amber,
@@ -140,6 +181,9 @@ class _NonogramBoardState extends State<NonogramBoard> {
                             return NonogramTile(
                               isSolution: widget.solution[row][col] == 1,
                               gridSize: gridSize,
+                              row: row,
+                              col: col,
+                              playerState: playerState,
                               onTileTapped: (value) {
                                 setState(() {
                                   playerState[row][col] = value;
@@ -153,6 +197,11 @@ class _NonogramBoardState extends State<NonogramBoard> {
                       }),
                     ),
                   ],
+                ),
+                SizedBox(height: 20), // Hint Button
+                ElevatedButton(
+                  onPressed: giveHint,
+                  child: Text("Give Hint"),
                 ),
               ],
             ),
@@ -169,14 +218,21 @@ class NonogramTile extends StatefulWidget {
   final bool isSolution;
   final double gridSize;
   final ValueChanged<int> onTileTapped;
+  final List<List<int>> playerState;
   final bool reset; 
+  final int row;
+  final int col;
+  
 
   const NonogramTile({
     super.key,
     required this.isSolution,
     required this.gridSize,
     required this.onTileTapped,
+    required this.playerState,
     required this.reset,
+    required this.row,
+    required this.col,
   });
 
   @override
@@ -194,6 +250,12 @@ class _NonogramTileState extends State<NonogramTile> {
         _tileState = TileState.unmarked; // Reset tile state
       });
     }
+    if (widget.playerState[widget.row][widget.col] == 1) {
+      _tileState = TileState.filled;
+    } else if (widget.playerState[widget.row][widget.col] == 0) {
+      _tileState = TileState.unmarked;
+    }
+    // debugPrint("I'm tile: ${widget.row}, ${widget.col}");
   }
 
   @override
