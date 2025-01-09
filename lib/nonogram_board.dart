@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class NonogramBoard extends StatefulWidget {
-  final String title; 
+  final String title;
   final List<List<int>> solution;
   final List<List<int>> rowClues;
   final List<List<int>> columnClues;
 
   const NonogramBoard({
     super.key,
-    required this.title, 
+    required this.title,
     required this.solution,
     required this.rowClues,
     required this.columnClues,
@@ -32,16 +32,17 @@ class _NonogramBoardState extends State<NonogramBoard> {
     super.initState();
     rows = widget.solution.length;
     cols = widget.solution[0].length;
-
-    // Initialize player state to all 0s
     playerState = List.generate(rows, (_) => List.generate(cols, (_) => 0));
   }
 
   void checkSolution() {
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        if (playerState[i][j] != widget.solution[i][j]) {
-          return; 
+        if (widget.solution[i][j] == 1 && playerState[i][j] != 1) {
+          return;
+        }
+        if (widget.solution[i][j] == 0 && playerState[i][j] == 1) {
+          return;
         }
       }
     }
@@ -52,21 +53,23 @@ class _NonogramBoardState extends State<NonogramBoard> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text("Congratulations!"),
-        content: Text("You have completed the puzzle correctly. Would you like to solve it again?"),
+        content: Text(
+            "You have completed the puzzle correctly. Would you like to solve it again?"),
         actions: [
           TextButton(
             onPressed: () {
               // Reset the board
               setState(() {
-                playerState = List.generate(rows, (_) => List.generate(cols, (_) => 0));
-                resetBoard = !resetBoard; 
+                playerState =
+                    List.generate(rows, (_) => List.generate(cols, (_) => 0));
+                resetBoard = !resetBoard;
               });
-              Navigator.of(context).pop(); 
+              Navigator.of(context).pop();
             },
             child: Text("Yes"),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(), 
+            onPressed: () => Navigator.of(context).pop(),
             child: Text("No"),
           ),
         ],
@@ -74,87 +77,143 @@ class _NonogramBoardState extends State<NonogramBoard> {
     );
   }
 
+  void giveHint() {
+    List<List<int>> hintMarkedPositions = [];
+    List<List<int>> hintBlankPositions = [];
+
+    for (int i = 0; i < rows; i++) {
+      for (int j = 0; j < cols; j++) {
+        if (playerState[i][j] != 1 && widget.solution[i][j] == 1) {
+          hintMarkedPositions.add([i, j]);
+        } else if (playerState[i][j] == 1 && widget.solution[i][j] == 0) {
+          hintBlankPositions.add([i, j]);
+        }
+      }
+    }
+
+    setState(() {
+      if (hintMarkedPositions.isNotEmpty) {
+        final randomHint = (hintMarkedPositions..shuffle()).first;
+        playerState[randomHint[0]][randomHint[1]] = 1;
+      } else if (hintBlankPositions.isNotEmpty) {
+        final randomHint = (hintBlankPositions..shuffle()).first;
+        playerState[randomHint[0]][randomHint[1]] = 0;
+      }
+      checkSolution();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Dynamically calculate grid and font size based on screen width
-    final gridSize = screenWidth / (cols + 4); 
+    final gridSize = screenWidth / (cols + 4);
     final fontSize = gridSize * 0.3;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title), 
+        title: Text(widget.title),
         backgroundColor: Colors.amber,
         actions: [
           IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.pop(context); // Navigate back to the puzzle menu
+              Navigator.pop(context);
             },
           ),
         ],
       ),
       body: Container(
-        color: Colors.white, 
+        color: Colors.white,
         child: Center(
           child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(cols, (col) {
-                    return Container(
-                      width: gridSize,
-                      child: Column(
-                        children: widget.columnClues[col]
-                            .map((clue) =>
-                                Text('$clue', style: TextStyle(fontSize: fontSize)))
-                            .toList(),
-                      ),
-                    );
-                  }),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      children: List.generate(rows, (row) {
+            scrollDirection: Axis.horizontal,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(width: gridSize * 0.8),
+                      ...List.generate(cols, (col) {
                         return Container(
-                          height: gridSize,
-                          child: Row(
-                            children: widget.rowClues[row]
-                                .map((clue) => Text('$clue',
-                                    style: TextStyle(fontSize: fontSize)))
+                          width: gridSize,
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: widget.columnClues[col]
+                                .map((clue) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 2.0),
+                                      child: Text(
+                                        '$clue',
+                                        style: TextStyle(
+                                            fontSize: fontSize, height: 1.0),
+                                      ),
+                                    ))
                                 .toList(),
                           ),
                         );
                       }),
-                    ),
-                    // Grid
-                    Column(
-                      children: List.generate(rows, (row) {
-                        return Row(
-                          children: List.generate(cols, (col) {
-                            return NonogramTile(
-                              isSolution: widget.solution[row][col] == 1,
-                              gridSize: gridSize,
-                              onTileTapped: (value) {
-                                setState(() {
-                                  playerState[row][col] = value;
-                                  checkSolution();
-                                });
-                              },
-                              reset: resetBoard, // Pass reset trigger
-                            );
-                          }),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: List.generate(rows, (row) {
+                          return Container(
+                            height: gridSize,
+                            alignment: Alignment.centerRight,
+                            padding: EdgeInsets.symmetric(horizontal: 4.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: widget.rowClues[row]
+                                  .map((clue) => Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 2.0),
+                                        child: Text('$clue',
+                                            style: TextStyle(
+                                                fontSize: fontSize, height: 1.0)),
+                                      ))
+                                  .toList(),
+                            ),
+                          );
+                        }),
+                      ),
+                      Column(
+                        children: List.generate(rows, (row) {
+                          return Row(
+                            children: List.generate(cols, (col) {
+                              return NonogramTile(
+                                isSolution: widget.solution[row][col] == 1,
+                                gridSize: gridSize,
+                                onTileTapped: (value) {
+                                  setState(() {
+                                    playerState[row][col] = value;
+                                    checkSolution();
+                                  });
+                                },
+                                reset: resetBoard,
+                                playerState: playerState,
+                                row: row,
+                                col: col,
+                              );
+                            }),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: giveHint,
+                    child: Text("Give Hint"),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -169,7 +228,10 @@ class NonogramTile extends StatefulWidget {
   final bool isSolution;
   final double gridSize;
   final ValueChanged<int> onTileTapped;
-  final bool reset; 
+  final bool reset;
+  final List<List<int>> playerState;
+  final int row;
+  final int col;
 
   const NonogramTile({
     super.key,
@@ -177,6 +239,9 @@ class NonogramTile extends StatefulWidget {
     required this.gridSize,
     required this.onTileTapped,
     required this.reset,
+    required this.playerState,
+    required this.row,
+    required this.col,
   });
 
   @override
@@ -191,8 +256,15 @@ class _NonogramTileState extends State<NonogramTile> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.reset != widget.reset) {
       setState(() {
-        _tileState = TileState.unmarked; // Reset tile state
+        _tileState = TileState.unmarked;
       });
+    }
+    if (widget.playerState[widget.row][widget.col] == 1) {
+      _tileState = TileState.filled;
+    } else if (widget.playerState[widget.row][widget.col] == 0) {
+      _tileState = TileState.unmarked;
+    } else if (widget.playerState[widget.row][widget.col] == -1) {
+      _tileState = TileState.markedEmpty;
     }
   }
 
@@ -215,15 +287,18 @@ class _NonogramTileState extends State<NonogramTile> {
       onTap: () {
         setState(() {
           if (_tileState == TileState.unmarked) {
-            _tileState = TileState.filled; // White → Blue
+            _tileState = TileState.filled;
+            widget.playerState[widget.row][widget.col] = 1;
           } else if (_tileState == TileState.filled) {
-            _tileState = TileState.markedEmpty; // Blue → Grey
+            _tileState = TileState.markedEmpty;
+            widget.playerState[widget.row][widget.col] = -1;
           } else {
-            _tileState = TileState.unmarked; // Grey → White
+            _tileState = TileState.unmarked;
+            widget.playerState[widget.row][widget.col] = 0;
           }
         });
 
-        widget.onTileTapped(_tileState == TileState.filled ? 1 : 0);
+        widget.onTileTapped(widget.playerState[widget.row][widget.col]);
       },
       child: Container(
         width: widget.gridSize,
