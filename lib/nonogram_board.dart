@@ -38,7 +38,10 @@ class _NonogramBoardState extends State<NonogramBoard> {
   void checkSolution() {
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        if (playerState[i][j] != widget.solution[i][j]) {
+        if (widget.solution[i][j] == 1 && playerState[i][j] != 1) {
+          return;
+        }
+        if (widget.solution[i][j] == 0 && playerState[i][j] == 1) {
           return;
         }
       }
@@ -74,6 +77,32 @@ class _NonogramBoardState extends State<NonogramBoard> {
     );
   }
 
+  void giveHint() {
+    List<List<int>> hintMarkedPositions = [];
+    List<List<int>> hintBlankPositions = [];
+
+    for (int i = 0; i < rows; i++) {
+      for (int j = 0; j < cols; j++) {
+        if (playerState[i][j] != 1 && widget.solution[i][j] == 1) {
+          hintMarkedPositions.add([i, j]);
+        } else if (playerState[i][j] == 1 && widget.solution[i][j] == 0) {
+          hintBlankPositions.add([i, j]);
+        }
+      }
+    }
+
+    setState(() {
+      if (hintMarkedPositions.isNotEmpty) {
+        final randomHint = (hintMarkedPositions..shuffle()).first;
+        playerState[randomHint[0]][randomHint[1]] = 1;
+      } else if (hintBlankPositions.isNotEmpty) {
+        final randomHint = (hintBlankPositions..shuffle()).first;
+        playerState[randomHint[0]][randomHint[1]] = 0;
+      }
+      checkSolution();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -90,7 +119,7 @@ class _NonogramBoardState extends State<NonogramBoard> {
           IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.pop(context); // Navigate back to the puzzle menu
+              Navigator.pop(context);
             },
           ),
         ],
@@ -103,11 +132,10 @@ class _NonogramBoardState extends State<NonogramBoard> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // Column Clues
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(width: gridSize * 0.8), // Slightly reduce the offset
+                      SizedBox(width: gridSize * 0.8),
                       ...List.generate(cols, (col) {
                         return Container(
                           width: gridSize,
@@ -130,7 +158,6 @@ class _NonogramBoardState extends State<NonogramBoard> {
                       }),
                     ],
                   ),
-                  // Row Clues and Grid
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -156,7 +183,6 @@ class _NonogramBoardState extends State<NonogramBoard> {
                           );
                         }),
                       ),
-                      // Grid
                       Column(
                         children: List.generate(rows, (row) {
                           return Row(
@@ -170,13 +196,21 @@ class _NonogramBoardState extends State<NonogramBoard> {
                                     checkSolution();
                                   });
                                 },
-                                reset: resetBoard, // Pass reset trigger
+                                reset: resetBoard,
+                                playerState: playerState,
+                                row: row,
+                                col: col,
                               );
                             }),
                           );
                         }),
                       ),
                     ],
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: giveHint,
+                    child: Text("Give Hint"),
                   ),
                 ],
               ),
@@ -195,6 +229,9 @@ class NonogramTile extends StatefulWidget {
   final double gridSize;
   final ValueChanged<int> onTileTapped;
   final bool reset;
+  final List<List<int>> playerState;
+  final int row;
+  final int col;
 
   const NonogramTile({
     super.key,
@@ -202,6 +239,9 @@ class NonogramTile extends StatefulWidget {
     required this.gridSize,
     required this.onTileTapped,
     required this.reset,
+    required this.playerState,
+    required this.row,
+    required this.col,
   });
 
   @override
@@ -216,8 +256,15 @@ class _NonogramTileState extends State<NonogramTile> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.reset != widget.reset) {
       setState(() {
-        _tileState = TileState.unmarked; // Reset tile state
+        _tileState = TileState.unmarked;
       });
+    }
+    if (widget.playerState[widget.row][widget.col] == 1) {
+      _tileState = TileState.filled;
+    } else if (widget.playerState[widget.row][widget.col] == 0) {
+      _tileState = TileState.unmarked;
+    } else if (widget.playerState[widget.row][widget.col] == -1) {
+      _tileState = TileState.markedEmpty;
     }
   }
 
@@ -240,15 +287,18 @@ class _NonogramTileState extends State<NonogramTile> {
       onTap: () {
         setState(() {
           if (_tileState == TileState.unmarked) {
-            _tileState = TileState.filled; // White → Blue
+            _tileState = TileState.filled;
+            widget.playerState[widget.row][widget.col] = 1;
           } else if (_tileState == TileState.filled) {
-            _tileState = TileState.markedEmpty; // Blue → Grey
+            _tileState = TileState.markedEmpty;
+            widget.playerState[widget.row][widget.col] = -1;
           } else {
-            _tileState = TileState.unmarked; // Grey → White
+            _tileState = TileState.unmarked;
+            widget.playerState[widget.row][widget.col] = 0;
           }
         });
 
-        widget.onTileTapped(_tileState == TileState.filled ? 1 : 0);
+        widget.onTileTapped(widget.playerState[widget.row][widget.col]);
       },
       child: Container(
         width: widget.gridSize,
