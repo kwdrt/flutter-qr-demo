@@ -9,7 +9,134 @@ class CreatePuzzleScreen extends StatefulWidget {
 }
 
 class _CreatePuzzleScreenState extends State<CreatePuzzleScreen> {
-  List<List<int>> boardState = List.generate(9, (_) => List.generate(8, (_) => 0));
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Select Board Size'),
+        backgroundColor: Colors.amber,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Choose Board Size',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PuzzleBoard(size: 5),
+                  ),
+                );
+              },
+              child: const Text('5x5'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PuzzleBoard(size: 10),
+                  ),
+                );
+              },
+              child: const Text('10x10'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PuzzleBoard(size: 15),
+                  ),
+                );
+              },
+              child: const Text('15x15'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                TextEditingController heightController = TextEditingController();
+                TextEditingController widthController = TextEditingController();
+
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Custom Size'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: heightController,
+                          decoration: const InputDecoration(hintText: 'Enter height'),
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: widthController,
+                          decoration: const InputDecoration(hintText: 'Enter width'),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          final height = int.tryParse(heightController.text);
+                          final width = int.tryParse(widthController.text);
+                          if (height != null && width != null && height > 0 && width > 0) {
+                            Navigator.of(context).pop();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PuzzleBoard(size: height > width ? height : width),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              child: const Text('Custom Size'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class PuzzleBoard extends StatefulWidget {
+  final int size;
+
+  const PuzzleBoard({Key? key, required this.size}) : super(key: key);
+
+  @override
+  _PuzzleBoardState createState() => _PuzzleBoardState();
+}
+
+class _PuzzleBoardState extends State<PuzzleBoard> {
+  late List<List<int>> boardState;
+
+  @override
+  void initState() {
+    super.initState();
+    boardState = List.generate(widget.size, (_) => List.generate(widget.size, (_) => 0));
+  }
 
   List<List<int>> generateRowClues(List<List<int>> board) {
     return board.map((row) {
@@ -64,7 +191,7 @@ class _CreatePuzzleScreenState extends State<CreatePuzzleScreen> {
       'solution': boardState,
       'rowClues': rowClues,
       'columnClues': columnClues,
-      'solved': false, 
+      'solved': false,
     });
 
     await file.writeAsString(json.encode(puzzles), flush: true);
@@ -104,7 +231,7 @@ class _CreatePuzzleScreenState extends State<CreatePuzzleScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final gridSize = (screenWidth - 32) / 8;
+    final gridSize = (screenWidth - 32) / widget.size;
 
     return Scaffold(
       appBar: AppBar(
@@ -117,10 +244,10 @@ class _CreatePuzzleScreenState extends State<CreatePuzzleScreen> {
             children: [
               const SizedBox(height: 20),
               Column(
-                children: List.generate(9, (row) {
+                children: List.generate(widget.size, (row) {
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(8, (col) {
+                    children: List.generate(widget.size, (col) {
                       return GestureDetector(
                         onTap: () {
                           setState(() {
