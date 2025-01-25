@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:qr_test/QrCodeGenerator.dart';
 import 'dart:convert';
 import 'nonogram_board.dart';
 import 'package:qr_test/AppState.dart';
@@ -67,7 +68,8 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
               ),
               child: const Text(
                 'Solve Puzzles',
@@ -85,7 +87,8 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
               ),
               child: const Text(
                 'Create Puzzle',
@@ -110,7 +113,8 @@ class _HomePageState extends State<HomePage> {
                     }
                   : null,
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
               ),
               child: const Text(
                 'Puzzle QR',
@@ -234,7 +238,24 @@ List<List<int>> getColumnClues(List<List<int>> solution) {
   return results;
 }
 
+String generateQRCode(List<List<int>> solution) {
+  int size = solution[0].length;
+  print(size);
 
+  String result = "";
+  String defColorValue = "#00FF00";
+
+  result = "$result$size $defColorValue ";
+
+  for (int i = 0; i < size; i++) {
+    for (int j = 0; j < size; j++) {
+      result += solution[i][j].toString();
+    }
+  }
+
+  print(result);
+  return result;
+}
 
 class SolvePuzzlesScreen extends StatefulWidget {
   @override
@@ -259,7 +280,8 @@ class _SolvePuzzlesScreenState extends State<SolvePuzzlesScreen> {
     if (await file.exists()) {
       final jsonString = await file.readAsString();
       setState(() {
-        customPuzzles = List<Map<String, dynamic>>.from(json.decode(jsonString));
+        customPuzzles =
+            List<Map<String, dynamic>>.from(json.decode(jsonString));
       });
     }
   }
@@ -304,9 +326,13 @@ class _SolvePuzzlesScreenState extends State<SolvePuzzlesScreen> {
                         MaterialPageRoute(
                           builder: (context) => NonogramBoard(
                             title: 'Puzzle ${index + 1}',
-                            solution: index == 0 ? puzzle1Solution : puzzle2Solution,
-                            rowClues: index == 0 ? puzzle1RowClues : puzzle2RowClues,
-                            columnClues: index == 0 ? puzzle1ColumnClues : puzzle2ColumnClues,
+                            solution:
+                                index == 0 ? puzzle1Solution : puzzle2Solution,
+                            rowClues:
+                                index == 0 ? puzzle1RowClues : puzzle2RowClues,
+                            columnClues: index == 0
+                                ? puzzle1ColumnClues
+                                : puzzle2ColumnClues,
                           ),
                         ),
                       );
@@ -326,35 +352,68 @@ class _SolvePuzzlesScreenState extends State<SolvePuzzlesScreen> {
                 itemCount: customPuzzles.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(customPuzzles[index]['name'] ?? 'Unnamed Puzzle'),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text('Delete Puzzle'),
-                            content: Text('Are you sure you want to delete "${customPuzzles[index]['name']}"?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(false),
-                                child: Text('Cancel'),
+                    title:
+                        Text(customPuzzles[index]['name'] ?? 'Unnamed Puzzle'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text('Delete Puzzle'),
+                                content: Text(
+                                    'Are you sure you want to delete "${customPuzzles[index]['name']}"?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
+                                    child: Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
+                                    child: Text('Delete'),
+                                  ),
+                                ],
                               ),
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(true),
-                                child: Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        );
+                            );
 
-                        if (confirm == true) {
-                          await deleteCustomPuzzle(index);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Puzzle deleted successfully')),
-                          );
-                        }
-                      },
+                            if (confirm == true) {
+                              await deleteCustomPuzzle(index);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content:
+                                        Text('Puzzle deleted successfully')),
+                              );
+                            }
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.qr_code, color: Colors.blue),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => Dialog(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text("Generated code for the puzzle"),
+                                    QRCodeGenerator(
+                                        data: generateQRCode(customPuzzles[
+                                                index]['solution']
+                                            .map<List<int>>((dynamic row) =>
+                                                List<int>.from(row.cast<int>()))
+                                            .toList()))
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                     onTap: () {
                       Navigator.push(
@@ -368,9 +427,10 @@ class _SolvePuzzlesScreenState extends State<SolvePuzzlesScreen> {
                             rowClues: (customPuzzles[index]['rowClues'] as List)
                                 .map((row) => List<int>.from(row))
                                 .toList(),
-                            columnClues: (customPuzzles[index]['columnClues'] as List)
-                                .map((col) => List<int>.from(col))
-                                .toList(),
+                            columnClues:
+                                (customPuzzles[index]['columnClues'] as List)
+                                    .map((col) => List<int>.from(col))
+                                    .toList(),
                           ),
                         ),
                       );
